@@ -1,13 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap');
+
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  margin: 20px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+* {
+  font-family: 'Tinos', serif;
+}
+
+input {
+  height: 36px;
+  border: 1px solid #AEAEAE;
+  padding-left: 7px;
+  font-size: 18px;
+}
+
+button {
+  height: 40px;
+  font-size: 18px;
 }

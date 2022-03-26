@@ -1,5 +1,5 @@
 import { HardhatUserConfig, task } from "hardhat/config"
-import "@typechain/hardhat"
+import '@typechain/hardhat'
 import "@nomiclabs/hardhat-waffle"
 import "@nomiclabs/hardhat-ethers"
 import "hardhat-deploy"

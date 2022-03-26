@@ -1,0 +1,14 @@
+.col {
+  max-width: 300px;
+}
+
+.centerVertically {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 80vh;
+}
+
+.searchButton {
+  margin-left: 10px;
+}

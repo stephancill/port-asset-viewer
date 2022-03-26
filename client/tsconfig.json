@@ -20,11 +20,6 @@
     "noEmit": true,
     "jsx": "react-jsx"
   },
-  "references": [
-    { 
-      "path": "../backend"
-    }
-  ],
   "include": [
     "src"
   ]

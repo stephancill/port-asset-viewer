@@ -1,5 +1,5 @@
-import {HardhatRuntimeEnvironment} from "hardhat/types"
-import {DeployFunction} from "hardhat-deploy/types"
+import {HardhatRuntimeEnvironment} from 'hardhat/types'
+import {DeployFunction} from 'hardhat-deploy/types'
 
 const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts} = hre
@@ -7,12 +7,15 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   const {deployer} = await getNamedAccounts()
 
-  await deploy("Greeter", {
+  const isOpen = process.env.OPEN !== undefined
+  console.log("isOpen", isOpen)
+
+  await deploy('Directory', {
     from: deployer,
     log: true,
-    args: ["Hello, Hardhat!"],
+    args: [isOpen],
     autoMine: true, // speed up deployment on local network (ganache, hardhat), no effect on live networks
   })
 }
 export default func
-func.tags = ["Greeter"]
+func.tags = ['Directory']

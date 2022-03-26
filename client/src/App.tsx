@@ -1,34 +1,60 @@
-import logo from './logo.svg';
 import './App.css';
-import { ConnectButton } from './components/ConnectButton/ConnectButton';
-import { GreeterState } from './components/GreeterState/GreeterState';
-import { useProvider, useSigner } from 'wagmi';
-import { providers } from 'ethers'
+
+import { Provider, defaultChains } from 'wagmi'
+import { InjectedConnector } from 'wagmi/connectors/injected'
+import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
+import {BrowserRouter, Routes, Route} from "react-router-dom"
+
+import { Search } from './pages/Search/Search'
+import { NavBar } from './components/NavBar/NavBar'
+import { AddressDetail } from './pages/AddressDetail/AddressDetail';
+
+
+
+const infuraId = process.env.REACT_APP_INFURA_PROJECT_ID
+const chains = defaultChains
+
+// Set up connectors
+const connectors = () => {
+  return [
+    new InjectedConnector({ chains }),
+    new WalletConnectConnector({
+      options: {
+        infuraId,
+        qrcode: true,
+      },
+    })
+  ]
+}
 
 function App() {
-  const provider = useProvider()
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-        <div>
-          <ConnectButton></ConnectButton>
+    <BrowserRouter>
+      <Provider autoConnect connectors={connectors}>
+        <div className="App">
+        
+          <NavBar/>
+          <Routes>
+
+            <Route path="/" element={<Search/>}/>
+            <Route path="port">
+              <Route path=":searchQuery" element={<AddressDetail/>}/>
+            </Route>
+            <Route
+              path="*"
+              element={
+                <main style={{ padding: "1rem" }}>
+                  <p>There's nothing here!</p>
+                </main>
+              }
+            />
+          </Routes>
+
+          
         </div>
-        <div>{provider && <GreeterState></GreeterState>}</div>
-      </header>
-    </div>
+      </Provider>
+    </BrowserRouter>
   );
 }
 
