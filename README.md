@@ -21,7 +21,7 @@ git clone <repo name>
 FORK=mainnet npx hardhat node
 ```
 ```
-FORK=mainnet npx hardhat deploy --export-all ../client/src/deployments.json --network localhost
+FORK=mainnet npx hardhat deploy --export ../client/src/deployments.json --network localhost
 ```
 
 Optionally include `OPEN=true` to deploy open Directory, which allows editing of any address' list by any other address.
