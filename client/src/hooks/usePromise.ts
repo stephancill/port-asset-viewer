@@ -28,6 +28,7 @@ export default function usePromise<T>(f: () => Promise<T>, deps: any[]): [T | un
     return function cleanup() {
       subscribed = false
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps || [])
 
   return [result, error, isLoading]

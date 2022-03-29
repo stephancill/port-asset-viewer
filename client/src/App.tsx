@@ -39,7 +39,7 @@ function App() {
 
             <Route path="/" element={<Search/>}/>
             <Route path="port">
-              <Route path=":searchQuery" element={<AddressDetail/>}/>
+              <Route path=":address" element={<AddressDetail/>}/>
             </Route>
             <Route
               path="*"

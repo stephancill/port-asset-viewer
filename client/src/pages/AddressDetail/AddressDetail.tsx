@@ -1,11 +1,10 @@
 import Ajv from "ajv"
 import addFormats from "ajv-formats"
-import { TokenList, TokenInfo, schema } from "@uniswap/token-lists"
+import { TokenList, schema } from "@uniswap/token-lists"
 import { ethers } from "ethers"
 import { useParams } from "react-router-dom"
-import { useAccount, useContractRead, useProvider, useSigner } from "wagmi"
+import { useContractRead, useProvider, useSigner } from "wagmi"
 import { Directory } from "../../../../backend/types"
-import { AssetItemList } from "../../components/AssetItemList/AssetItemList"
 import { useContractAdapter } from "../../hooks/useContractAdapter"
 import { useDirectoryContract } from "../../hooks/useDirectoryContract"
 import usePromise from "../../hooks/usePromise"
@@ -30,13 +29,39 @@ const ajv = new Ajv({ allErrors: true })
 addFormats(ajv)
 const validate = ajv.compile(schema)
 
-async function fetchTokenList(tokenURI: string | undefined): Promise<TokenList> {
-  return defaultTokenList
+async function fetchTokenList(ipfs: IPFS, tokenURI: string | undefined): Promise<TokenList | undefined> {
+  if (!tokenURI) {
+    return
+  }
+  let tokenListJson: JSON
+  if (tokenURI.indexOf("ipfs://") === 0 && ipfs) {
+    const stream = ipfs.cat(tokenURI.split("ipfs://")[1])
+    let data = ""
+
+    for await (const chunk of stream) {
+      data += Buffer.from(chunk).toString('utf-8')
+    }
+    try {
+      tokenListJson = JSON.parse(data)
+    } catch(_) {
+      tokenListJson = JSON.parse("{}")
+    }
+  } else {
+    const response = await fetch(tokenURI)
+    tokenListJson = await response.json()
+  }
+  
+  const valid = validate(tokenListJson)
+  if (valid) {
+    return tokenListJson as unknown as TokenList
+    // setTokenList(tokenListJson as unknown as TokenList)
+    // setCanonicalTokenList(tokenListJson as unknown as TokenList)
+  }
+  return
 }
 
 async function publishTokenList(ipfs: IPFS, directoryContract: Directory, address: string, tokenList: TokenList): Promise<string | undefined> {
   // Publish to IPFS
-  console.log("hello")
   if (!ipfs) {
     console.error("no ipfs")
     // TODO: Handle this
@@ -66,7 +91,6 @@ export const AddressDetail = () => {
   const directoryContractConfig = useContractAdapter(directoryContract)
 
   const {address: rawAddress} = useParams()
-  const [{ data: account }] = useAccount({fetchEns: true})
   const address = rawAddress ? isAddress(rawAddress.toLowerCase()) ? getAddress(rawAddress.toLowerCase()) : undefined : undefined
 
   const ipfs = useStartIPFS()
@@ -78,7 +102,13 @@ export const AddressDetail = () => {
   ) 
 
   const [tokenListResult] = usePromise(
-    () => fetchTokenList(tokenListURI ? tokenListURI[0] as string : undefined), 
+    async () => {
+      if (ipfs) {
+        return await fetchTokenList(ipfs, tokenListURI ? tokenListURI[0] as string : undefined)
+      } else {
+        return undefined
+      }
+    }, 
     [tokenListURI]
   )
 
@@ -90,10 +120,26 @@ export const AddressDetail = () => {
     }
   }, [tokenListResult])
 
+  useEffect(() => {
+    if (isAddress(address || "")) {
+      console.log("fetching token list uri")
+      readTokenListURI()
+    }
+  }, [address])
+
+  useEffect(() => {
+    console.log("token list URI changed", tokenListURI)
+  }, [tokenListURI])
+
+  // On mount
+  useEffect(() => {
+    
+  }, [])
+
   return <div>
     {/* <AssetItemList items={[]}/> */}
     {JSON.stringify(tokenList)}
-    <button onClick={async () => {
+    <button disabled={!ipfs || !address} onClick={async () => {
       if (ipfs && address) {
         await publishTokenList(ipfs, directoryContract, address, tokenList)
         readTokenListURI()
