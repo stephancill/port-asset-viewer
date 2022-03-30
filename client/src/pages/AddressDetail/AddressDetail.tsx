@@ -1,6 +1,6 @@
 import Ajv from "ajv"
 import addFormats from "ajv-formats"
-import { TokenList, schema } from "@uniswap/token-lists"
+import { TokenList, schema, TokenInfo } from "@uniswap/token-lists"
 import { ethers } from "ethers"
 import { useParams } from "react-router-dom"
 import { useContractRead, useProvider, useSigner } from "wagmi"
@@ -22,7 +22,7 @@ const defaultTokenList: TokenList = {
     major: 1,
     minor: 0,
     patch: 0
-  }
+  },
 }
 
 const ajv = new Ajv({ allErrors: true })
@@ -33,8 +33,10 @@ async function fetchTokenList(ipfs: IPFS, tokenURI: string | undefined): Promise
   if (!tokenURI) {
     return
   }
+  console.log("tokenURI", tokenURI)
   let tokenListJson: JSON
   if (tokenURI.indexOf("ipfs://") === 0 && ipfs) {
+    console.log("loading tokenList from IPFS")
     const stream = ipfs.cat(tokenURI.split("ipfs://")[1])
     let data = ""
 
@@ -50,12 +52,16 @@ async function fetchTokenList(ipfs: IPFS, tokenURI: string | undefined): Promise
     const response = await fetch(tokenURI)
     tokenListJson = await response.json()
   }
+
+  console.log(tokenListJson)
   
   const valid = validate(tokenListJson)
   if (valid) {
     return tokenListJson as unknown as TokenList
     // setTokenList(tokenListJson as unknown as TokenList)
     // setCanonicalTokenList(tokenListJson as unknown as TokenList)
+  } else {
+    console.log("invalid tokenListJson")
   }
   return
 }
@@ -104,19 +110,25 @@ export const AddressDetail = () => {
   const [tokenListResult] = usePromise(
     async () => {
       if (ipfs) {
-        return await fetchTokenList(ipfs, tokenListURI ? tokenListURI[0] as string : undefined)
+        console.log("trying to fetch token list from IPFS")
+        const fetchedTokenList = await fetchTokenList(ipfs, tokenListURI ? tokenListURI as unknown as string : undefined)
+        console.log("fetchedTokenList", fetchedTokenList)
+        return fetchedTokenList
       } else {
         return undefined
       }
     }, 
-    [tokenListURI]
+    [tokenListURI, ipfs]
   )
 
   const [tokenList, setTokenList] = useState<TokenList>(defaultTokenList)
+  const [canonicalTokenList, setCanonicalTokenList] = useState<TokenList | undefined>()
 
   useEffect(() => {
+    console.log("tokenListResult changed", tokenListResult)
     if (tokenListResult) {
       setTokenList(tokenListResult)
+      setCanonicalTokenList(tokenListResult)
     }
   }, [tokenListResult])
 
@@ -142,14 +154,14 @@ export const AddressDetail = () => {
 
 
   return <div>
-    {/* <AssetItemList items={[]}/> */}
     <div>{JSON.stringify(tokenList)}</div>
     <div>{tokenListURI || "No tokenListURI"}</div>
-    <button disabled={!ipfs || !address} onClick={async () => {
+    <div>{canonicalTokenList ? "canonicalTokenList" : "No canonicalTokenList"}</div>
+    <button disabled={!ipfs || !address || tokenList.tokens.length === 0} onClick={async () => {
       if (ipfs && address) {
         await publishTokenList(ipfs, directoryContract, address, tokenList)
         readTokenListURI()
       }
-    }}>Publish default list</button>
+    }}>{canonicalTokenList ? "Update" : "Publish"} list</button>
   </div>
 }
