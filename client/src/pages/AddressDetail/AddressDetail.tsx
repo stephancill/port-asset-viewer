@@ -121,11 +121,11 @@ export const AddressDetail = () => {
   }, [tokenListResult])
 
   useEffect(() => {
-    if (isAddress(address || "")) {
-      console.log("fetching token list uri")
-      readTokenListURI()
+    if (isAddress(address || "") && ipfs) {
+      readTokenListURI({args: [address]})
     }
-  }, [address])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [address, ipfs])
 
   useEffect(() => {
     console.log("token list URI changed", tokenListURI)
@@ -133,12 +133,18 @@ export const AddressDetail = () => {
 
   // On mount
   useEffect(() => {
-    
-  }, [])
+    console.log("ipfs changed", ipfs && "connected")
+  }, [ipfs])
+
+  useEffect(() => {
+    console.log("address changed", address)
+  }, [address])
+
 
   return <div>
     {/* <AssetItemList items={[]}/> */}
-    {JSON.stringify(tokenList)}
+    <div>{JSON.stringify(tokenList)}</div>
+    <div>{tokenListURI || "No tokenListURI"}</div>
     <button disabled={!ipfs || !address} onClick={async () => {
       if (ipfs && address) {
         await publishTokenList(ipfs, directoryContract, address, tokenList)
