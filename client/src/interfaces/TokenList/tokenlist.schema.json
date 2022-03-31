@@ -221,7 +221,7 @@
         "interfaceId": {
           "type": "string",
           "description": "The hexadecimal interface identifier",
-          "pattern": "^0x[a-fA-F0-9]$",
+          "pattern": "^0x[a-fA-F0-9]+",
           "examples": [
             "0x80ac58cd",
             "0xd9b67a26"
@@ -231,7 +231,8 @@
           "type": "array",
           "description": "The list of tokens included in the list",
           "items": {
-            "type": "integer"
+            "type": "string",
+            "pattern": "^(0*[1-9]\\d*)+"
           },
           "minItems": 1,
           "examples": [

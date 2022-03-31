@@ -22,5 +22,8 @@
     "ts-node": "^10.4.0",
     "typechain": "^7.0.0",
     "typescript": "^4.5.5"
+  },
+  "scripts": {
+    "start": "FORK=mainnet npx hardhat node --export ../client/src/deployments.json"
   }
 }

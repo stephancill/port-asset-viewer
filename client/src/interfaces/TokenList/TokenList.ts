@@ -2,8 +2,9 @@ declare type ExtensionValue = string | number | boolean | null;
 export interface TokenInfo {
     readonly chainId: number;
     readonly address: string;
+    readonly interfaceId: string;
     readonly name: string;
-    readonly tokenIds: number[];
+    readonly tokenIds: string[];
     readonly logoURI?: string;
     readonly tags?: string[];
     readonly extensions?: {

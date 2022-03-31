@@ -22,6 +22,8 @@ export const parseTokenURI = async (uri: string): Promise<ITokenMetadata | undef
       image: `https://ipfs.io/ipfs/${metadata.image.split("ipfs://")[1]}`
     } 
   }
+
+  console.log("metadata", metadata)
   
   return metadata
 }

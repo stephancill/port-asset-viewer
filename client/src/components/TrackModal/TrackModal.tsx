@@ -1,40 +1,34 @@
 import style from "./TrackModal.module.css"
 import { useState, useEffect } from "react"
-import { BaseContract, ethers } from "ethers"
+import { ethers } from "ethers"
 import { useProvider } from "wagmi"
 import { TokenInfo } from "../../interfaces/TokenList"
 import ERC165 from "../../abis/erc165"
 import ERC721 from "../../abis/erc721"
 import ERC1155 from "../../abis/erc1155"
 import { parseTokenURI } from "../../utils/parseTokenURI"
-import { ITokenMetadata } from "../../interfaces/ITokenMetadata"
 import usePromise from "../../hooks/usePromise"
 import { truncateAddress } from "../../utilities"
 import erc1155 from "../../abis/erc1155"
 import erc721 from "../../abis/erc721"
+import { ITokenDetail } from "../../interfaces/ITokenDetail"
+import { ITokenContract } from "../../interfaces/ITokenContract"
+import { ITokenMetadata } from "../../interfaces/ITokenMetadata"
 
 interface ITrackModalProps {
   onAddToken: (token: TokenInfo) => void
 }
 
-interface ITokenContract extends ITokenMetadata {
-  address: string
-  tokenContract: ethers.Contract
-  interfaceId: string
-}
-
-interface ITokenDetail extends ITokenMetadata {
-  tokenId: number
-}
-
-async function getTokenMetadata(addressOrENS: string, provider: ethers.providers.BaseProvider): Promise<ITokenContract> {
+async function getTokenMetadata(addressOrENS: string, provider: ethers.providers.BaseProvider): Promise<ITokenContract & ITokenMetadata> {
   let tokenContract = new ethers.Contract(addressOrENS, ERC165.abi, provider)
   const [isERC721, isERC1155] = await Promise.all<[boolean, boolean]>(
     [tokenContract.supportsInterface(ERC721.interfaceId!), tokenContract.supportsInterface(ERC1155.interfaceId!)]
   )
   let interfaceId: string | undefined
+  let contractName = ""
   if (isERC721) {
     tokenContract = new ethers.Contract(addressOrENS, ERC721.abi, provider)
+    contractName = await tokenContract.name()
     interfaceId = ERC721.interfaceId!
   } else if (isERC1155) {
     tokenContract = new ethers.Contract(addressOrENS, ERC1155.abi, provider)
@@ -42,17 +36,14 @@ async function getTokenMetadata(addressOrENS: string, provider: ethers.providers
   } else {
     throw Error("Unsupported interface")
   }
-  try {
-
-  } catch (e) {
-    throw Error("Incompatible contract")
-  }
 
   const tokenURI = await tokenContract.tokenURI(1) as unknown as string
   const tokenMetadata = await parseTokenURI(tokenURI)
+
   if (!tokenMetadata) {
     throw Error("Invalid token URI for token 0")
   } else {
+    if (!tokenMetadata.name && interfaceId === erc721.interfaceId) tokenMetadata.name = contractName
     return {
       ...tokenMetadata,
       tokenContract,
@@ -64,12 +55,13 @@ async function getTokenMetadata(addressOrENS: string, provider: ethers.providers
 
 export const TrackModal = ({onAddToken}: ITrackModalProps) => {
   const [searchQuery, setSearchQuery] = useState("")
-  const [tokenId, setTokenId] = useState<number | undefined>()
+  const [tokenId, setTokenId] = useState<string | undefined>()
   const [tokenInfo, setTokenInfo] = useState<TokenInfo | undefined>()
   const [error, setError] = useState<string | undefined>()
+  const [shouldClear, setShouldClear] = useState(false)
   const provider = useProvider()
 
-  const [tokenContractResult, tokenContractLoading, tokenContractError] = usePromise<ITokenContract | undefined>(
+  const [tokenContractResult, tokenContractLoading, tokenContractError] = usePromise<ITokenContract & ITokenMetadata | undefined>(
     async () => {
       const isAddressOrENS = ethers.utils.isAddress(searchQuery.toLowerCase()) || (searchQuery.indexOf(".eth") > -1 && searchQuery.split(".eth")[1].length === 0)
       if (!isAddressOrENS || !searchQuery || !provider) {
@@ -83,11 +75,24 @@ export const TrackModal = ({onAddToken}: ITrackModalProps) => {
   const [tokens, setTokens] = useState<ITokenDetail[]>([])
 
   useEffect(() => {
+    if (shouldClear) {
+      console.log("clearing")
+      setTokenId(undefined)
+      setTokenInfo(undefined)
+      setTokens([])
+      setError(undefined)
+      setSearchQuery("")
+      setShouldClear(false)
+    }
+  }, [shouldClear])
+
+  useEffect(() => {
     if (tokenContractResult) {
       const tokenInfo: TokenInfo = {
         address: tokenContractResult.address,
         chainId: provider.network.chainId,
         tokenIds: [],
+        interfaceId: tokenContractResult.interfaceId,
         name: tokenContractResult.name
       }
       setError(undefined)
@@ -96,7 +101,7 @@ export const TrackModal = ({onAddToken}: ITrackModalProps) => {
       setError("Something went wrong")
       setTokenInfo(undefined)
     }
-  }, [tokenContractResult, tokenContractError])
+  }, [tokenContractResult, tokenContractError, provider])
 
   return <div>
     <div className={style.heading}>Add Collection</div>
@@ -108,6 +113,7 @@ export const TrackModal = ({onAddToken}: ITrackModalProps) => {
         address: tokenContractResult.address,
         chainId: provider.network.chainId,
         tokenIds: [],
+        interfaceId: tokenContractResult.interfaceId,
         name: tokenContractResult.name
       }
       setTokenInfo(tokenInfo)
@@ -131,8 +137,8 @@ export const TrackModal = ({onAddToken}: ITrackModalProps) => {
         </div>
       </div>
 
-      <div onSubmit={(e) => e.preventDefault()}>
-        <input className={style.searchInput} onChange={(e) => setTokenId(parseInt(e.target.value))} type="number" placeholder="Token ID" />
+      <div>
+        <input className={style.searchInput} onChange={(e) => setTokenId(e.target.value)} type="number" placeholder="Token ID" value={tokenId || ""} />
         <button onClick={async () => {
           console.log("fetching token uri", tokenId)
           let tokenMetadataRaw: string | undefined
@@ -157,9 +163,9 @@ export const TrackModal = ({onAddToken}: ITrackModalProps) => {
         }}>Add</button>
       </div>
 
-      {tokens.map(token => {
-        return <div key={token.name}>
-          <img style={{width: "100px"}} src={token.image} alt="" />
+      {tokens.map((token, index) => {
+        return <div key={index}>
+          <img style={{width: "100px", height: "100px"}} src={token.image} alt="" />
         </div>
       })}
 
@@ -168,6 +174,7 @@ export const TrackModal = ({onAddToken}: ITrackModalProps) => {
           ...tokenInfo,
           tokenIds: tokens.map(token => token.tokenId)
         })
+        setShouldClear(true)
       }}>Complete</button>
     </div>
     

@@ -1,13 +1,16 @@
-import { AssetItem, IAssetItem } from "../AssetItem/AssetItem"
+import { TokenList } from "../../interfaces/TokenList"
+import { AssetItem } from "../AssetItem/AssetItem"
 
 interface IAssetItemListProps {
-  items: Array<IAssetItem>
+  tokenList: TokenList
 }
 
-export const AssetItemList = ({items}: IAssetItemListProps) => {
+export const AssetItemList = ({tokenList}: IAssetItemListProps) => {
   return <div>
-    {[...new Array(items.length)].map((_, index) => {
-      return <AssetItem style={{marginRight: "15px", marginBottom: "15px"}} key={index} {...items[index]}/>
-    })}
+    {[...tokenList.tokens.map((token, i) => {
+      return token.tokenIds.map((tokenId, j) => {
+        return <AssetItem style={{marginRight: "15px", marginBottom: "15px"}} key={`${i} ${j}`} tokenInfo={token} tokenId={tokenId}/>
+      })
+    })]}
   </div> 
 }

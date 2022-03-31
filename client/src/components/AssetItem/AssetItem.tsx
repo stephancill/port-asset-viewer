@@ -1,21 +1,54 @@
 import styles from "./AssetItem.module.css"
 import React from "react"
-import { TokenInfo } from "@uniswap/token-lists"
+import { TokenInfo } from "../../interfaces/TokenList"
+import { useProvider, useSigner } from "wagmi"
+import { ethers } from "ethers"
+import { ITokenMetadata } from "../../interfaces/ITokenMetadata"
+import ERC721 from "../../abis/erc721"
+import ERC1155 from "../../abis/erc1155"
+import { parseTokenURI } from "../../utils/parseTokenURI"
+import usePromise from "../../hooks/usePromise"
 
-export interface IAssetItem {
-  src: string
+interface IAssetItemProps extends React.HTMLAttributes<HTMLElement> {
   tokenInfo: TokenInfo
-  tokenId: number
+  tokenId: string
 }
 
-interface IAssetItemProps extends IAssetItem, React.HTMLAttributes<HTMLElement> {
-  
+type SigerOrProvider = ethers.providers.Provider | ethers.Signer
+
+async function getTokenMetadata(tokenId: string, address: string, interfaceId: string, provider: SigerOrProvider): Promise<ITokenMetadata | undefined> {
+  let tokenContract: ethers.Contract | undefined
+  let metadataURI: string | undefined
+  if (interfaceId === ERC721.interfaceId) {
+    tokenContract = new ethers.Contract(address, ERC721.abi, provider)
+    metadataURI = await tokenContract.tokenURI(tokenId)
+  } else if (interfaceId === ERC1155.interfaceId) {
+    tokenContract = new ethers.Contract(address, ERC1155.abi, provider)
+    metadataURI = await tokenContract.uri(tokenId)
+  }
+
+  if (metadataURI) {
+    return await parseTokenURI(metadataURI)
+  }
+
+  return undefined
 }
 
-export const AssetItem = ({style, src, tokenInfo, tokenId}: IAssetItemProps) => {
+export const AssetItem = ({tokenId, tokenInfo, style}: IAssetItemProps) => {
+  const provider = useProvider()
+  const [{ data: signer }] = useSigner()
+  const {address, interfaceId, name} = tokenInfo
+  const [metadata] = usePromise<ITokenMetadata | undefined>(
+    async () => {
+      if (tokenId && address && interfaceId && (signer || provider)) {
+        return await getTokenMetadata(tokenId, address, interfaceId, signer || provider)
+      }
+    },
+    [provider, address, signer]
+  )
   return <div className={styles.item} style={style}>
-    <img src={src} alt={`${tokenInfo.name} #${tokenId}`}/>
-    <div className={styles.subheading}>{tokenInfo.name}</div>
+    <img src={metadata?.image} alt={`${name} #${tokenId}`}/>
+    <div className={styles.subheading}>{name}</div>
     <div className={styles.subheading}>#{tokenId}</div>
   </div>
 }

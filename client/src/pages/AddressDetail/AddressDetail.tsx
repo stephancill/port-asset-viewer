@@ -13,6 +13,7 @@ import { useEffect, useState } from "react"
 import { useStartIPFS } from "../../hooks/useStartIPFS"
 import { GenericModal } from "../../components/GenericModal/GenericModal"
 import { TrackModal } from "../../components/TrackModal/TrackModal"
+import { AssetItemList } from "../../components/AssetItemList/AssetItemList"
 
 const {isAddress, getAddress} = ethers.utils
 
@@ -131,13 +132,16 @@ export const AddressDetail = () => {
 
   const onAddToken = (token: TokenInfo) => {
     const newTokenList = {...tokenList!}
-    if (tokenList?.tokens.filter(_token => _token.address === token.address).length === 0) {
+    console.log("hi", token)
+    // TODO: When token address already entered, should update token IDs
+    if (tokenList?.tokens.filter(_token => _token.address === token.address && _token.tokenIds.sort() === token.tokenIds.sort()).length === 0) {
       newTokenList!.tokens.push(token)
       if (canonicalTokenList) {
         newTokenList!.version = {
           ...canonicalTokenList.version,
           patch: canonicalTokenList.version.patch + 1,
         }
+        console.log("new token list patch number", canonicalTokenList.version.patch + 1, newTokenList)
       }
     }
     setTokenList(newTokenList)
@@ -163,7 +167,6 @@ export const AddressDetail = () => {
     console.log("token list URI changed", tokenListURI)
   }, [tokenListURI])
 
-  // On mount
   useEffect(() => {
     console.log("ipfs changed", ipfs && "connected")
   }, [ipfs])
@@ -172,7 +175,7 @@ export const AddressDetail = () => {
     console.log("address changed", address)
   }, [address])
 
-  const ready = ipfs && address
+  const ready = ipfs && address && (provider || signer)
 
   return <div>
     <div>{JSON.stringify(tokenList)}</div>
@@ -181,30 +184,6 @@ export const AddressDetail = () => {
     <GenericModal setShouldShow={setShouldShowTrackingModal} shouldShow={shouldShowTrackingModal} content={
       <TrackModal onAddToken={onAddToken}/> // TODO: Test this
     }/>
-    {/* <GenericModal setShouldShow={setShouldShowOverrideModal} shouldShow={shouldShowOverrideModal} content={
-      <div>
-        <input type="text" value={overrideURN} placeholder="Override list URN" onChange={(e) => setOverrideURN(e.target.value)}/>
-        <button onClick={() => {
-          (async () => {
-            console.log(overrideURN)
-            try {
-              const tx = await directoryContract!.setListForAddress(user!.address, overrideURN)
-              await tx.wait()
-            } catch (error) {}
-            
-          })()
-        }}>Confirm</button>
-      </div>
-    }/>
-    <GenericModal setShouldShow={setShouldShowRemoveTokens} shouldShow={shouldShowRemoveTokens} content={
-      <div>
-        {
-          tokenList?.tokens.map(token => <div key={token.address}>
-            <button onClick={() => onRemoveToken(token)}>{token.name}</button>
-          </div>)
-        }
-      </div>
-    }/> */}
     <button disabled={!ready || tokenList.tokens.length === 0} onClick={async () => {
       if (ipfs && address) {
         await publishTokenList(ipfs, directoryContract, address, tokenList)
@@ -212,5 +191,9 @@ export const AddressDetail = () => {
       }
     }}>{canonicalTokenList ? "Update" : "Publish"} list</button>
     {ready && <button onClick={() => setShouldShowTrackingModal(true)}>Add</button>}
+
+    <div style={{marginTop: "20px"}}>
+      <AssetItemList tokenList={tokenList} />
+    </div>
   </div>
 }
