@@ -1,5 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&family=Tinos:ital,wght@0,400;0,700;1,400&display=swap');
 
+:root {
+  --shadow: #0e1310;
+  --dark: #1D1D1D;
+  --lighter: #343434;
+  --lighterer: #575757;
+  --lightererer: #7c7c7c;
+  --primary: white;
+}
+
 body {
   margin: 20px;
   -webkit-font-smoothing: antialiased;

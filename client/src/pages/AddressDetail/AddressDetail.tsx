@@ -1,6 +1,6 @@
 import Ajv from "ajv"
 import addFormats from "ajv-formats"
-import { TokenList, schema, TokenInfo } from "@uniswap/token-lists"
+import { TokenList, TokenInfo, schema } from "../../interfaces/TokenList"
 import { ethers } from "ethers"
 import { useParams } from "react-router-dom"
 import { useContractRead, useProvider, useSigner } from "wagmi"
@@ -11,6 +11,8 @@ import usePromise from "../../hooks/usePromise"
 import { IPFS } from "ipfs-core"
 import { useEffect, useState } from "react"
 import { useStartIPFS } from "../../hooks/useStartIPFS"
+import { GenericModal } from "../../components/GenericModal/GenericModal"
+import { TrackModal } from "../../components/TrackModal/TrackModal"
 
 const {isAddress, getAddress} = ethers.utils
 
@@ -55,7 +57,7 @@ async function fetchTokenList(ipfs: IPFS, tokenURI: string | undefined): Promise
 
   console.log(tokenListJson)
   
-  const valid = validate(tokenListJson)
+  const valid = validate(tokenListJson) // TODO: Check schema
   if (valid) {
     return tokenListJson as unknown as TokenList
     // setTokenList(tokenListJson as unknown as TokenList)
@@ -91,6 +93,9 @@ async function publishTokenList(ipfs: IPFS, directoryContract: Directory, addres
 
 export const AddressDetail = () => {
 
+  const [shouldShowTrackingModal, setShouldShowTrackingModal] = useState(false)
+  // const [shouldShowOverrideModal, setShouldShowOverrideModal] = useState(false)
+
   const provider = useProvider()
   const [{ data: signer }] = useSigner()
   const directoryContract = useDirectoryContract(signer || provider)
@@ -124,6 +129,21 @@ export const AddressDetail = () => {
   const [tokenList, setTokenList] = useState<TokenList>(defaultTokenList)
   const [canonicalTokenList, setCanonicalTokenList] = useState<TokenList | undefined>()
 
+  const onAddToken = (token: TokenInfo) => {
+    const newTokenList = {...tokenList!}
+    if (tokenList?.tokens.filter(_token => _token.address === token.address).length === 0) {
+      newTokenList!.tokens.push(token)
+      if (canonicalTokenList) {
+        newTokenList!.version = {
+          ...canonicalTokenList.version,
+          patch: canonicalTokenList.version.patch + 1,
+        }
+      }
+    }
+    setTokenList(newTokenList)
+    setShouldShowTrackingModal(false)
+  }
+
   useEffect(() => {
     console.log("tokenListResult changed", tokenListResult)
     if (tokenListResult) {
@@ -152,16 +172,45 @@ export const AddressDetail = () => {
     console.log("address changed", address)
   }, [address])
 
+  const ready = ipfs && address
 
   return <div>
     <div>{JSON.stringify(tokenList)}</div>
     <div>{tokenListURI || "No tokenListURI"}</div>
     <div>{canonicalTokenList ? "canonicalTokenList" : "No canonicalTokenList"}</div>
-    <button disabled={!ipfs || !address || tokenList.tokens.length === 0} onClick={async () => {
+    <GenericModal setShouldShow={setShouldShowTrackingModal} shouldShow={shouldShowTrackingModal} content={
+      <TrackModal onAddToken={onAddToken}/> // TODO: Test this
+    }/>
+    {/* <GenericModal setShouldShow={setShouldShowOverrideModal} shouldShow={shouldShowOverrideModal} content={
+      <div>
+        <input type="text" value={overrideURN} placeholder="Override list URN" onChange={(e) => setOverrideURN(e.target.value)}/>
+        <button onClick={() => {
+          (async () => {
+            console.log(overrideURN)
+            try {
+              const tx = await directoryContract!.setListForAddress(user!.address, overrideURN)
+              await tx.wait()
+            } catch (error) {}
+            
+          })()
+        }}>Confirm</button>
+      </div>
+    }/>
+    <GenericModal setShouldShow={setShouldShowRemoveTokens} shouldShow={shouldShowRemoveTokens} content={
+      <div>
+        {
+          tokenList?.tokens.map(token => <div key={token.address}>
+            <button onClick={() => onRemoveToken(token)}>{token.name}</button>
+          </div>)
+        }
+      </div>
+    }/> */}
+    <button disabled={!ready || tokenList.tokens.length === 0} onClick={async () => {
       if (ipfs && address) {
         await publishTokenList(ipfs, directoryContract, address, tokenList)
         readTokenListURI()
       }
     }}>{canonicalTokenList ? "Update" : "Publish"} list</button>
+    {ready && <button onClick={() => setShouldShowTrackingModal(true)}>Add</button>}
   </div>
 }

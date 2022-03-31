@@ -1,4 +1,4 @@
-# Stephan's Dapp Template
+# Port Digital Asset Viewer
 
 ## Stack
 ### Backend
@@ -52,3 +52,9 @@ yarn start
   - [ ] ERC1155
   - [x] ERC721
 - [ ] Separate asset and Directory networks
+
+## References
+
+* https://github.com/ethereum/EIPs/blob/master/EIPS/eip-721.md
+* https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1155.md
+* https://github.com/ethereum/EIPs/blob/master/EIPS/eip-165.md

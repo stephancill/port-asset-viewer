@@ -1,8 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://uniswap.org/tokenlist.schema.json",
-  "title": "Uniswap Token List",
-  "description": "Schema for lists of tokens compatible with the Uniswap Interface",
+  "title": "Port Token List",
+  "description": "Schema for lists of tokens compatible with the Port digital asset viewer",
   "definitions": {
     "Version": {
       "type": "object",
@@ -219,13 +218,16 @@
             "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
           ]
         },
-        "tokenId": {
-          "type": "integer",
-          "description": "The ID of the individual token",
-          "minimum": 0,
+        "tokenIds": {
+          "type": "array",
+          "description": "The list of tokens included in the list",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
           "examples": [
-            1,
-            1234567890
+            [1, 1000, 10000],
+            [1234, 123, 12, 1]
           ]
         },
         "name": {
@@ -265,7 +267,7 @@
       "required": [
         "chainId",
         "address",
-        "tokenId",
+        "tokenIds",
         "name"
       ]
     }

@@ -1,0 +1,28 @@
+.heading {
+  font-size: 24px;
+}
+
+.searchInput {
+  margin-top: 26px;
+  width: 100%;
+}
+
+.collectionRow {
+  display: flex;
+}
+
+.collectionRow img {
+  width: 43px;
+  height: 43px;
+  border: 1px solid black;
+}
+
+.collectionHeading {
+  display: flex;
+}
+
+.collectionHeading img {
+  width: 43px;
+  height: 43px;
+  border: 1px solid black;
+}
