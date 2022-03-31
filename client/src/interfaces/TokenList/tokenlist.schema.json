@@ -218,6 +218,15 @@
             "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
           ]
         },
+        "interfaceId": {
+          "type": "string",
+          "description": "The hexadecimal interface identifier",
+          "pattern": "^0x[a-fA-F0-9]$",
+          "examples": [
+            "0x80ac58cd",
+            "0xd9b67a26"
+          ]
+        },
         "tokenIds": {
           "type": "array",
           "description": "The list of tokens included in the list",
@@ -266,6 +275,7 @@
       "required": [
         "chainId",
         "address",
+        "interfaceId",
         "tokenIds",
         "name"
       ]
