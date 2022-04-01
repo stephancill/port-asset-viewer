@@ -46,6 +46,7 @@ yarn start
 - [x] Token types
   - [x] ERC1155
   - [x] ERC721
+- [x] Verify ownership
 - [ ] Separate asset and Directory networks
 - [ ] Multi-chain
 - [ ] Token detail view

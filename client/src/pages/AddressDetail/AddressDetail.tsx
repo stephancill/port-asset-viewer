@@ -106,6 +106,7 @@ export const AddressDetail = () => {
   const {address: rawAddress} = useParams()
   const address = rawAddress ? isAddress(rawAddress.toLowerCase()) ? getAddress(rawAddress.toLowerCase()) : undefined : undefined
 
+  // TODO: Store this in context when app starts
   const ipfs = useStartIPFS()
 
   const [{ data: tokenListURI }, readTokenListURI] = useContractRead(
@@ -193,13 +194,16 @@ export const AddressDetail = () => {
             readTokenListURI()
           }
         }}>{canonicalTokenList ? "Update" : "Publish"} list</button>
-        {ready && <button onClick={() => setShouldShowTrackingModal(true)}>Add</button>}
+        {ready && <span>
+          <button onClick={() => setShouldShowTrackingModal(true)}>Add</button>
+          <button>Sync</button>
+        </span> }
       </div>
     }
     
-
-    <div style={{marginTop: "20px"}}>
-      <AssetItemList tokenList={tokenList} />
-    </div>
+    {address && <div style={{marginTop: "20px"}}>
+      <AssetItemList tokenList={tokenList} ownerAddress={address} />
+    </div>}
+    
   </div>
 }

@@ -23,7 +23,7 @@ export const parseTokenURI = async (uri: string): Promise<ITokenMetadata | undef
     } 
   }
 
-  console.log("metadata", metadata)
+  // console.log("metadata", metadata)
   
   return metadata
 }
