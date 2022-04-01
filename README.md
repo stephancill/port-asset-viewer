@@ -35,20 +35,20 @@ yarn start
 
 - [ ] Token lists
   - [x] Create
-  - [x] Generate/sync from OpenSea/Etherscan
+  - [ ] Generate/sync from OpenSea/Etherscan
   - [x] Publish
   - [ ] Pinning
   - [x] Update
-  - [ ] Default
+  - [x] Default
     - [x] No tokens
-    - [ ] Popular tokens
 - [x] Contract
-  - [x] Store URI to [token list](https://github.com/Uniswap/token-lists)
-- [ ] Token types
-  - [ ] Support ENS NFTs 
-  - [ ] ERC1155
+  - [x] Store URI to token list adapted from [Uniswap standard](https://github.com/Uniswap/token-lists)
+- [x] Token types
+  - [x] ERC1155
   - [x] ERC721
 - [ ] Separate asset and Directory networks
+- [ ] Multi-chain
+- [ ] Token detail view
 
 ## References
 
