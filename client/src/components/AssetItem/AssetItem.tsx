@@ -1,5 +1,5 @@
 import styles from "./AssetItem.module.css"
-import React from "react"
+import React, { useEffect } from "react"
 import { TokenInfo } from "../../interfaces/TokenList"
 import { useProvider, useSigner } from "wagmi"
 import { ethers } from "ethers"
@@ -46,9 +46,14 @@ export const AssetItem = ({tokenId, tokenInfo, style}: IAssetItemProps) => {
     },
     [provider, address, signer]
   )
+
+  useEffect(() => {
+    console.log("metadata changed", metadata?.image)
+  }, [metadata])
+
   return <div className={styles.item} style={style}>
     <img src={metadata?.image} alt={`${name} #${tokenId}`}/>
     <div className={styles.subheading}>{name}</div>
-    <div className={styles.subheading}>#{tokenId}</div>
+    <div style={{overflow: "hidden"}} className={styles.subheading}>#{tokenId}</div>
   </div>
 }

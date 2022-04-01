@@ -3,7 +3,7 @@ import addFormats from "ajv-formats"
 import { TokenList, TokenInfo, schema } from "../../interfaces/TokenList"
 import { ethers } from "ethers"
 import { useParams } from "react-router-dom"
-import { useContractRead, useProvider, useSigner } from "wagmi"
+import { useAccount, useContractRead, useProvider, useSigner } from "wagmi"
 import { Directory } from "../../../../backend/types"
 import { useContractAdapter } from "../../hooks/useContractAdapter"
 import { useDirectoryContract } from "../../hooks/useDirectoryContract"
@@ -99,6 +99,7 @@ export const AddressDetail = () => {
 
   const provider = useProvider()
   const [{ data: signer }] = useSigner()
+  const [{ data: account }] = useAccount()
   const directoryContract = useDirectoryContract(signer || provider)
   const directoryContractConfig = useContractAdapter(directoryContract)
 
@@ -182,15 +183,20 @@ export const AddressDetail = () => {
     <div>{tokenListURI || "No tokenListURI"}</div>
     <div>{canonicalTokenList ? "canonicalTokenList" : "No canonicalTokenList"}</div>
     <GenericModal setShouldShow={setShouldShowTrackingModal} shouldShow={shouldShowTrackingModal} content={
-      <TrackModal onAddToken={onAddToken}/> // TODO: Test this
+      <TrackModal onAddToken={onAddToken}/>
     }/>
-    <button disabled={!ready || tokenList.tokens.length === 0} onClick={async () => {
-      if (ipfs && address) {
-        await publishTokenList(ipfs, directoryContract, address, tokenList)
-        readTokenListURI()
-      }
-    }}>{canonicalTokenList ? "Update" : "Publish"} list</button>
-    {ready && <button onClick={() => setShouldShowTrackingModal(true)}>Add</button>}
+    {
+      account && account.address === address && <div>
+        <button disabled={!ready || tokenList.tokens.length === 0} onClick={async () => {
+          if (ipfs && address) {
+            await publishTokenList(ipfs, directoryContract, address, tokenList)
+            readTokenListURI()
+          }
+        }}>{canonicalTokenList ? "Update" : "Publish"} list</button>
+        {ready && <button onClick={() => setShouldShowTrackingModal(true)}>Add</button>}
+      </div>
+    }
+    
 
     <div style={{marginTop: "20px"}}>
       <AssetItemList tokenList={tokenList} />

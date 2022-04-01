@@ -30,9 +30,11 @@ async function getTokenMetadata(addressOrENS: string, provider: ethers.providers
     tokenContract = new ethers.Contract(addressOrENS, ERC721.abi, provider)
     contractName = await tokenContract.name()
     interfaceId = ERC721.interfaceId!
+    console.log("erc721", contractName)
   } else if (isERC1155) {
     tokenContract = new ethers.Contract(addressOrENS, ERC1155.abi, provider)
     interfaceId = ERC1155.interfaceId!
+    console.log("erc1155")
   } else {
     throw Error("Unsupported interface")
   }
@@ -43,7 +45,7 @@ async function getTokenMetadata(addressOrENS: string, provider: ethers.providers
   if (!tokenMetadata) {
     throw Error("Invalid token URI for token 0")
   } else {
-    if (!tokenMetadata.name && interfaceId === erc721.interfaceId) tokenMetadata.name = contractName
+    if (interfaceId === erc721.interfaceId || !tokenMetadata.name) tokenMetadata.name = contractName
     return {
       ...tokenMetadata,
       tokenContract,
@@ -55,7 +57,7 @@ async function getTokenMetadata(addressOrENS: string, provider: ethers.providers
 
 export const TrackModal = ({onAddToken}: ITrackModalProps) => {
   const [searchQuery, setSearchQuery] = useState("")
-  const [tokenId, setTokenId] = useState<string | undefined>()
+  const [tokenId, setTokenId] = useState("")
   const [tokenInfo, setTokenInfo] = useState<TokenInfo | undefined>()
   const [error, setError] = useState<string | undefined>()
   const [shouldClear, setShouldClear] = useState(false)
@@ -77,7 +79,7 @@ export const TrackModal = ({onAddToken}: ITrackModalProps) => {
   useEffect(() => {
     if (shouldClear) {
       console.log("clearing")
-      setTokenId(undefined)
+      setTokenId("")
       setTokenInfo(undefined)
       setTokens([])
       setError(undefined)
@@ -86,7 +88,7 @@ export const TrackModal = ({onAddToken}: ITrackModalProps) => {
     }
   }, [shouldClear])
 
-  useEffect(() => {
+  const selectTokenContractResult = () => {
     if (tokenContractResult) {
       const tokenInfo: TokenInfo = {
         address: tokenContractResult.address,
@@ -97,58 +99,79 @@ export const TrackModal = ({onAddToken}: ITrackModalProps) => {
       }
       setError(undefined)
       setTokenInfo(tokenInfo)
+    }
+  }
+
+  useEffect(() => {
+    if (tokenContractResult) {
+      console.log("received tokenContractResult", tokenContractResult)
+      setError(undefined)
     } else if (tokenContractError) {
       setError("Something went wrong")
       setTokenInfo(undefined)
     }
   }, [tokenContractResult, tokenContractError, provider])
 
+  useEffect(() => {
+    if (tokenContractLoading) {
+      setShouldClear(true)
+    }
+  }, [tokenContractLoading])
+
   return <div>
     <div className={style.heading}>Add Collection</div>
-    <input className={style.searchInput} onChange={(e) => setSearchQuery(e.target.value)} type="text" placeholder="Search address or ENS" />
-    {tokenContractResult && tokenInfo?.address !== tokenContractResult?.address && !error && !tokenContractLoading ? 
-    // TODO: Style this
-    <button className={style.collectionRow} onClick={() => {
-      const tokenInfo: TokenInfo = {
-        address: tokenContractResult.address,
-        chainId: provider.network.chainId,
-        tokenIds: [],
-        interfaceId: tokenContractResult.interfaceId,
-        name: tokenContractResult.name
-      }
-      setTokenInfo(tokenInfo)
-    }}>
-      {/* TODO: Show error/loading */}
-      <img src={tokenContractResult.image} alt="" />
-      <div>
-        <div>{tokenContractResult.name}</div>
-        <div>{truncateAddress(tokenContractResult.address)}</div>
-      </div>
-    </button>
-    : 
-    tokenContractLoading && <div>Loading</div>}
+    { !tokenInfo && <>
+      <input className={style.searchInput} onChange={(e) => setSearchQuery(e.target.value)} type="text" placeholder="Search address or ENS" />
+      {tokenContractResult && !error ? 
+      // TODO: Style this
+      <button className={style.collectionRow} onClick={selectTokenContractResult}>
+        {/* TODO: Show error/loading */}
+        <img src={tokenContractResult.image} alt="" />
+        <div>
+          <div>{tokenContractResult.name}</div>
+          <div>{truncateAddress(tokenContractResult.address)}</div>
+        </div>
+      </button>
+      : 
+      tokenContractLoading && <div>Loading</div>}
+    </>}
+    
 
     {tokenInfo && <div>
-      <div className={style.collectionHeading}>
-        <img src={tokenContractResult?.image} alt="" />
-        <div>
-          <div>{tokenInfo.name}</div>
-          <div>{truncateAddress(tokenInfo.address)}</div>
+      <div style={{display: "flex"}}>
+        <div className={style.collectionHeading}>
+          <img src={tokenContractResult?.image} alt="" />
+          <div>
+            <div>{tokenInfo.name}</div>
+            <div>{truncateAddress(tokenInfo.address)}</div>
+          </div>
         </div>
+        <button onClick={() => setShouldClear(true)}>Clear</button>
       </div>
-
+      
       <div>
         <input className={style.searchInput} onChange={(e) => setTokenId(e.target.value)} type="number" placeholder="Token ID" value={tokenId || ""} />
         <button onClick={async () => {
-          console.log("fetching token uri", tokenId)
-          let tokenMetadataRaw: string | undefined
-          if (tokenContractResult?.interfaceId === erc1155.interfaceId) {
-            tokenMetadataRaw = await tokenContractResult?.tokenContract.uri(tokenId)
-          } else if (tokenContractResult?.interfaceId === erc721.interfaceId) {
-            tokenMetadataRaw = await tokenContractResult?.tokenContract.tokenURI(tokenId)
-          } else {
+          // Don't add duplicates
+          if (tokens.map(token => token.tokenId).includes(tokenId) || !parseInt(tokenId)) {
             return
           }
+          console.log("fetching token uri", tokenId)
+          let tokenMetadataRaw: string | undefined
+
+          // Get token metadata dependent on which interface ID
+          try {
+            if (tokenContractResult?.interfaceId === erc1155.interfaceId) {
+              tokenMetadataRaw = await tokenContractResult?.tokenContract.uri(tokenId)
+            } else if (tokenContractResult?.interfaceId === erc721.interfaceId) {
+              tokenMetadataRaw = await tokenContractResult?.tokenContract.tokenURI(tokenId)
+            } else {
+              return
+            }
+          } catch (e) {
+            // TODO: Set token not found error
+          }
+          
           try {
             console.log("got token metadata", tokenMetadataRaw)
             const tokenMetadata = await parseTokenURI(tokenMetadataRaw!)
@@ -163,6 +186,7 @@ export const TrackModal = ({onAddToken}: ITrackModalProps) => {
         }}>Add</button>
       </div>
 
+      {/* Preview items to add */}
       {tokens.map((token, index) => {
         return <div key={index}>
           <img style={{width: "100px", height: "100px"}} src={token.image} alt="" />
