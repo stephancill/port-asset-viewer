@@ -5,6 +5,8 @@ export const parseTokenURI = async (uri: string): Promise<ITokenMetadata | undef
 
   if (uri.indexOf("data:application/json;base64,") === 0) {
     metadata = JSON.parse(atob(uri.split("data:application/json;base64,")[1]))
+  } else if (uri.indexOf("data:application/json;utf8,") === 0) {
+    metadata = JSON.parse(uri.split("data:application/json;utf8,")[1])
   } else if (uri.indexOf("ipfs://") === 0) {
     const response = await fetch(`https://ipfs.io/ipfs/${uri.split("ipfs://")[1]}`)
     metadata = await response.json()

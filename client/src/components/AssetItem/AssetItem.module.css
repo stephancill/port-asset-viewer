@@ -2,6 +2,7 @@
   width: 250px;
   border: 1px black solid;
   display: inline-block;
+  word-wrap: break-word;
 }
 
 img {

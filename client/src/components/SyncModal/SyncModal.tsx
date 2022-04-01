@@ -1,4 +1,4 @@
-import { ethers } from "ethers"
+import { ethers, BigNumber } from "ethers"
 import { useEffect, useState } from "react"
 import { useAccount } from "wagmi"
 import erc1155 from "../../abis/erc1155"
@@ -7,6 +7,8 @@ import usePromise from "../../hooks/usePromise"
 import { TokenList, TokenInfo } from "../../interfaces/TokenList"
 import { findTokenDifferences } from "../../utils/tokenListUtilities"
 import style from "./SyncModal.module.css"
+
+
 
 interface IImportTokensModalProps {
   onSync: (tokens: Array<TokenInfo>) => void
@@ -45,7 +47,7 @@ async function getAllTokens(address: string) {
   let requestCount = 0
   let allTokensJSON: AlchemyNFTMetadata[] = []
 
-  while (!pageKey || requestCount === 0) {
+  while (pageKey || requestCount === 0) {
     console.log("making request",pageKey, requestCount )
     // Make the request and print the formatted response:
     const res = await fetch(pageKey ? `${fetchURL}&pageKey=${pageKey}` : fetchURL, requestOptions)
@@ -55,16 +57,13 @@ async function getAllTokens(address: string) {
     allTokensJSON = [...allTokensJSON, ...tokensJSON]
     pageKey = newPageKey
     requestCount += 1
-    if (requestCount > 5) {
-      console.log("breaking")
-      break
-    }
   }
   
   const tokensJSONByContract: {[key: string]: TokenInfo} = {}
   ;(allTokensJSON as AlchemyNFTMetadata[]).forEach(metadata => {
     const contractAddress = metadata.contract.address
-    const tokenId = metadata.id.tokenId
+    const tokenId = BigNumber.from(metadata.id.tokenId).toString()
+    
     if (!tokensJSONByContract[contractAddress]) {
       const tokenInfo: TokenInfo = {
         address: contractAddress,
