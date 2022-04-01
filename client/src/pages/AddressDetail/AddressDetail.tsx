@@ -1,6 +1,6 @@
 import Ajv from "ajv"
 import addFormats from "ajv-formats"
-import { TokenList, TokenInfo, schema } from "../../interfaces/TokenList"
+import { TokenList, TokenInfo, schema, Version } from "../../interfaces/TokenList"
 import { ethers } from "ethers"
 import { useParams } from "react-router-dom"
 import { useAccount, useContractRead, useProvider, useSigner } from "wagmi"
@@ -14,6 +14,8 @@ import { useStartIPFS } from "../../hooks/useStartIPFS"
 import { GenericModal } from "../../components/GenericModal/GenericModal"
 import { TrackModal } from "../../components/TrackModal/TrackModal"
 import { AssetItemList } from "../../components/AssetItemList/AssetItemList"
+import { SyncModal } from "../../components/SyncModal/SyncModal"
+import { getTokenInfoByContractAddress } from "../../utils/tokenListUtilities"
 
 const {isAddress, getAddress} = ethers.utils
 
@@ -92,9 +94,18 @@ async function publishTokenList(ipfs: IPFS, directoryContract: Directory, addres
   return undefined
 }
 
+function bumpVersionPatch(version: Version): Version {
+  const newVersion = {
+    ...version,
+    patch: version.patch + 1
+  }
+  return newVersion
+}
+
 export const AddressDetail = () => {
 
   const [shouldShowTrackingModal, setShouldShowTrackingModal] = useState(false)
+  const [shouldShowSyncModal, setShouldShowSyncModal] = useState(false)
   // const [shouldShowOverrideModal, setShouldShowOverrideModal] = useState(false)
 
   const provider = useProvider()
@@ -134,20 +145,29 @@ export const AddressDetail = () => {
 
   const onAddToken = (token: TokenInfo) => {
     const newTokenList = {...tokenList!}
-    console.log("hi", token)
     // TODO: When token address already entered, should update token IDs
     if (tokenList?.tokens.filter(_token => _token.address === token.address && _token.tokenIds.sort() === token.tokenIds.sort()).length === 0) {
       newTokenList!.tokens.push(token)
       if (canonicalTokenList) {
-        newTokenList!.version = {
-          ...canonicalTokenList.version,
-          patch: canonicalTokenList.version.patch + 1,
-        }
-        console.log("new token list patch number", canonicalTokenList.version.patch + 1, newTokenList)
+        newTokenList.version = bumpVersionPatch(canonicalTokenList.version)
       }
     }
     setTokenList(newTokenList)
     setShouldShowTrackingModal(false)
+  }
+
+  const onSyncTokens = (newTokens: TokenInfo[]) => {
+    const newTokenList = {...tokenList!}
+    const tokens = getTokenInfoByContractAddress(tokenList.tokens)
+    newTokens.forEach(newToken => {
+      tokens[newToken.address] = newToken
+    })
+    newTokenList.tokens = Object.values(tokens)
+    if (canonicalTokenList) {
+      newTokenList.version = bumpVersionPatch(canonicalTokenList.version)
+    }
+    setTokenList(newTokenList)
+    setShouldShowSyncModal(false)
   }
 
   useEffect(() => {
@@ -186,6 +206,9 @@ export const AddressDetail = () => {
     <GenericModal setShouldShow={setShouldShowTrackingModal} shouldShow={shouldShowTrackingModal} content={
       <TrackModal onAddToken={onAddToken}/>
     }/>
+    <GenericModal setShouldShow={setShouldShowSyncModal} shouldShow={shouldShowSyncModal} content={
+      <SyncModal onSync={onSyncTokens} tokenList={tokenList} />
+    }/>
     {
       account && account.address === address && <div>
         <button disabled={!ready || tokenList.tokens.length === 0} onClick={async () => {
@@ -196,7 +219,7 @@ export const AddressDetail = () => {
         }}>{canonicalTokenList ? "Update" : "Publish"} list</button>
         {ready && <span>
           <button onClick={() => setShouldShowTrackingModal(true)}>Add</button>
-          <button>Sync</button>
+          <button onClick={() => setShouldShowSyncModal(true)}>Sync</button>
         </span> }
       </div>
     }
