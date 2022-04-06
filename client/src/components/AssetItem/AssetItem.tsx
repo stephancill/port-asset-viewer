@@ -20,13 +20,19 @@ type SigerOrProvider = ethers.providers.Provider | ethers.Signer
 async function getTokenMetadata(tokenId: string, address: string, interfaceId: string, provider: SigerOrProvider): Promise<ITokenMetadata | undefined> {
   let tokenContract: ethers.Contract | undefined
   let metadataURI: string | undefined
-  if (interfaceId === ERC721.interfaceId) {
-    tokenContract = new ethers.Contract(address, ERC721.abi, provider)
-    metadataURI = await tokenContract.tokenURI(tokenId)
-  } else if (interfaceId === ERC1155.interfaceId) {
-    tokenContract = new ethers.Contract(address, ERC1155.abi, provider)
-    metadataURI = await tokenContract.uri(tokenId)
+  try {
+    if (interfaceId === ERC721.interfaceId) {
+      tokenContract = new ethers.Contract(address, ERC721.abi, provider)
+      metadataURI = await tokenContract.tokenURI(tokenId)
+    } else if (interfaceId === ERC1155.interfaceId) {
+      tokenContract = new ethers.Contract(address, ERC1155.abi, provider)
+      metadataURI = await tokenContract.uri(tokenId)
+    }
+  } catch (error) {
+    console.error(error)
+    console.log("could not get token metadata")
   }
+  
 
   if (metadataURI) {
     return await parseTokenURI(metadataURI)
