@@ -23,9 +23,9 @@ if (process.env.FORK) {
   if (process.env.FORK === "mainnet") {
     console.log("forking mainnet")
     hardhatNetwork = {
-      chainId: 1,
+      chainId: 31337,
       forking: {
-        url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`
+        url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       }
     }
   }

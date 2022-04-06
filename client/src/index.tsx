@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { Provider, defaultChains, developmentChains } from 'wagmi'
+import { Provider, defaultChains, developmentChains, chain } from 'wagmi'
 import { InjectedConnector } from 'wagmi/connectors/injected'
 import { WalletConnectConnector } from 'wagmi/connectors/walletConnect'
 import deployments from "./deployments.json"
@@ -23,10 +23,12 @@ export declare type Chain = {
 // API key for Ethereum node
 const infuraId = process.env.REACT_APP_INFURA_PROJECT_ID
 
-const defaultProvider = new JsonRpcProvider(!process.env.NODE_ENV || process.env.NODE_ENV === 'development' ? "http://127.0.0.1:8545/" : `https://mainnet.infura.io/v3/${infuraId}`)
+const isDebug = !process.env.NODE_ENV || process.env.NODE_ENV === 'development'
+
+const defaultProvider = new JsonRpcProvider(isDebug ? "http://127.0.0.1:8545/" : `https://mainnet.infura.io/v3/${infuraId}`)
 
 // Chains for connectors to support
-const chains = [...developmentChains, ...defaultChains].filter(chain => chain.id === parseInt(deployments.chainId))
+const chains = isDebug ? [chain.hardhat] : [chain.mainnet]
 
 // Set up connectors
 const connectors = ({ chainId }: {chainId?: number}) => {

@@ -89,7 +89,9 @@ async function publishTokenList(ipfs: IPFS, directoryContract: Directory, addres
     await tx.wait()
     // Force refresh
     return cid
-  } catch (error) {}
+  } catch (error) {
+    console.error(error)
+  }
 
   return undefined
 }
@@ -211,7 +213,7 @@ export const AddressDetail = () => {
     }/>
     {
       account && account.address === address && <div>
-        <button disabled={!ready || tokenList.tokens.length === 0} onClick={async () => {
+        <button disabled={!ready || tokenList.tokens.length === 0 || !validate(tokenList)} onClick={async () => {
           if (ipfs && address) {
             await publishTokenList(ipfs, directoryContract, address, tokenList)
             readTokenListURI()

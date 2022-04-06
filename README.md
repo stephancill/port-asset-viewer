@@ -39,6 +39,8 @@ yarn start
   - [x] Publish
   - [ ] Pinning
   - [x] Update
+    - [x] Add
+    - [ ] Remove
   - [x] Default
     - [x] No tokens
 - [x] Contract
