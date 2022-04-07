@@ -40,7 +40,7 @@ yarn start
   - [ ] Pinning
   - [x] Update
     - [x] Add
-    - [ ] Remove
+    - [x] Remove
   - [x] Default
     - [x] No tokens
 - [x] Contract

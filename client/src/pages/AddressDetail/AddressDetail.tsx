@@ -108,6 +108,7 @@ export const AddressDetail = () => {
 
   const [shouldShowTrackingModal, setShouldShowTrackingModal] = useState(false)
   const [shouldShowSyncModal, setShouldShowSyncModal] = useState(false)
+  const [shouldShowRemoveTokens, setShouldShowRemoveTokens] = useState(false)
   // const [shouldShowOverrideModal, setShouldShowOverrideModal] = useState(false)
 
   const provider = useProvider()
@@ -172,6 +173,39 @@ export const AddressDetail = () => {
     setShouldShowSyncModal(false)
   }
 
+  const onRemoveToken = (token: TokenInfo, tokenId: string) => {
+    const otherTokens = tokenList!.tokens.filter(_token => _token.address !== token.address)
+    let updatedCollection = tokenList!.tokens.find(_token => _token.address === token.address)
+    if (updatedCollection) {
+      const ids = new Set(updatedCollection?.tokenIds)
+      ids.delete(tokenId)
+      if (ids.size > 0) {
+        updatedCollection = {
+          ...updatedCollection,
+          tokenIds: Array.from(ids)
+        }
+        otherTokens.push(updatedCollection)
+      }
+    }
+    const newTokenList: TokenList = {
+      ...tokenList!,
+      tokens: otherTokens,
+      version:  canonicalTokenList ? bumpVersionPatch(canonicalTokenList.version) : tokenList!.version
+    }
+    setTokenList(newTokenList)
+  } 
+
+  const onRemoveCollection = (token: TokenInfo) => {
+    const newTokenList: TokenList = {
+      ...tokenList!,
+      tokens: tokenList!.tokens.filter(_token => _token.address !== token.address),
+      version:  canonicalTokenList ? bumpVersionPatch(canonicalTokenList.version) : tokenList!.version
+    }
+    setTokenList(newTokenList)
+  } 
+
+  
+
   useEffect(() => {
     console.log("tokenListResult changed", tokenListResult)
     if (tokenListResult) {
@@ -211,6 +245,20 @@ export const AddressDetail = () => {
     <GenericModal setShouldShow={setShouldShowSyncModal} shouldShow={shouldShowSyncModal} content={
       <SyncModal onSync={onSyncTokens} tokenList={tokenList} />
     }/>
+    <GenericModal setShouldShow={setShouldShowRemoveTokens} shouldShow={shouldShowRemoveTokens} content={
+      <div>
+        {
+          tokenList?.tokens.map(token => <div key={token.address} style={{border: "1px solid black"}}>
+            <div>
+              <div>{token.name}</div>
+              {token.tokenIds.map(id => <div key={id} style={{marginLeft: "20px"}}>#{id}</div>)}
+            </div>
+            
+            <button onClick={() => onRemoveCollection(token)}>Remove</button>
+          </div>)
+        }
+      </div>
+    }/>
     {
       account && account.address === address && <div>
         <button disabled={!ready || tokenList.tokens.length === 0 || !validate(tokenList)} onClick={async () => {
@@ -220,6 +268,9 @@ export const AddressDetail = () => {
           }
         }}>{canonicalTokenList ? "Update" : "Publish"} list</button>
         {ready && <span>
+          {tokenList && tokenList!.tokens.length > 0 &&
+            <button onClick={() => setShouldShowRemoveTokens(true)}>Remove</button>
+          }
           <button onClick={() => setShouldShowTrackingModal(true)}>Add</button>
           <button onClick={() => setShouldShowSyncModal(true)}>Sync</button>
         </span> }
