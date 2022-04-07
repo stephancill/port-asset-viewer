@@ -87,5 +87,7 @@ export const AssetItem = ({tokenId, tokenInfo, style, ownerAddress}: IAssetItemP
     <div className={styles.subheading}>{name}</div>
     <div style={{overflow: "hidden"}} className={styles.subheading}>#{tokenId}</div>
     <div>Ownership: { isOwner ? "✓" : "⨯"}</div>
+    {/* TODO: Chain agnostic */}
+    <div><a href={`http://opensea.io/assets/${tokenInfo.address}/${tokenId}`} target="_blank" rel="noopener noreferrer">OpenSea</a></div>
   </div>
 }
