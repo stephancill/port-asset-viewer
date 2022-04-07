@@ -51,6 +51,7 @@ yarn start
 - [x] Verify ownership
 - [ ] Separate asset and Directory networks
 - [ ] Multi-chain
+  - [ ] Customize RPC urls to use for each chain - allows for adding arbitrary EVM-compatible chains
 - [ ] Token detail view
 
 ## References
